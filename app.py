@@ -1,21 +1,24 @@
-import streamlit as st
-import pandas as pd
-import re
-
-# Configuração da página (sem ícone de lupa)
-st.set_page_config(page_title="Sistema CNAE", layout="centered")
-
-# 1. Injeção de CSS para o design corporativo e elegante
-st.markdown("""
-    <style>
-    /* Muda a fonte de todo o sistema para um padrão mais limpo e profissional */
+<style>
+    /* Muda a fonte de todo o sistema */
     html, body, [class*="css"] {
         font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     }
     
-    /* Fundo levemente acinzentado para delimitar a área do programa */
+    /* 1. O FUNDO TEXTURIZADO */
     .stApp {
-        background-color: #f8fafc;
+        background-color: #f0f4f8; /* Tom de fundo mais suave e sóbrio */
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='192' height='192' viewBox='0 0 192 192'%3E%3Cpath fill='%239C92AC' fill-opacity='0.15' d='M192 15v2a11 11 0 0 0-11 11c0 1.94 1.16 4.75 2.53 6.11l2.36 2.36a6.93 6.93 0 0 1 1.22 7.56l-.43.84a8.08 8.08 0 0 1-6.66 4.13H145v35.02a6.1 6.1 0 0 0 3.03 4.87l.84.43c1.58.79 4 .4 5.24-.85l2.36-2.36a12.04 12.04 0 0 1 7.51-3.11 13 13 0 1 1 .02 26 12 12 0 0 1-7.53-3.11l-2.36-2.36a4.93 4.93 0 0 0-5.24-.85l-.84.43a6.1 6.1 0 0 0-3.03 4.87V143h35.02a8.08 8.08 0 0 1 6.66 4.13l.43.84a6.91 6.91 0 0 1-1.22 7.56l-2.36 2.36A10.06 10.06 0 0 0 181 164a11 11 0 0 0 11 11v2a13 13 0 0 1-13-13 12 12 0 0 1 3.11-7.53l2.36-2.36a4.93 4.93 0 0 0 .85-5.24l-.43-.84a6.1 6.1 0 0 0-4.87-3.03H145v35.02a8.08 8.08 0 0 1-4.13 6.66l-.84.43a6.91 6.91 0 0 1-7.56-1.22l-2.36-2.36A10.06 10.06 0 0 0 124 181a11 11 0 0 0-11 11h-2a13 13 0 0 1 13-13c2.47 0 5.79 1.37 7.53 3.11l2.36 2.36a4.94 4.94 0 0 0 5.24.85l.84-.43a6.1 6.1 0 0 0 3.03-4.87V145h-35.02a8.08 8.08 0 0 1-6.66-4.13l-.43-.84a6.91 6.91 0 0 1 1.22-7.56l2.36-2.36A10.06 10.06 0 0 0 107 124a11 11 0 0 0-22 0c0 1.94 1.16 4.75 2.53 6.11l2.36 2.36a6.93 6.93 0 0 1 1.22 7.56l-.43.84a8.08 8.08 0 0 1-6.66 4.13H49v35.02a6.1 6.1 0 0 0 3.03 4.87l.84.43c1.58.79 4 .4 5.24-.85l2.36-2.36a12.04 12.04 0 0 1 7.51-3.11A13 13 0 0 1 81 192h-2a11 11 0 0 0-11-11c-1.94 0-4.75 1.16-6.11 2.53l-2.36 2.36a6.93 6.93 0 0 1-7.56 1.22l-.84-.43a8.08 8.08 0 0 1-4.13-6.66V145H11.98a6.1 6.1 0 0 0-4.87 3.03l-.43.84c-.79 1.58-.4 4 .85 5.24l2.36 2.36a12.04 12.04 0 0 1 3.11 7.51A13 13 0 0 1 0 177v-2a11 11 0 0 0 11-11c0-1.94-1.16-4.75-2.53-6.11l-2.36-2.36a6.93 6.93 0 0 1-1.22-7.56l.43-.84a8.08 8.08 0 0 1 6.66-4.13H47v-35.02a6.1 6.1 0 0 0-3.03-4.87l-.84-.43c-1.59-.8-4-.4-5.24.85l-2.36 2.36A12 12 0 0 1 28 109a13 13 0 1 1 0-26c2.47 0 5.79 1.37 7.53 3.11l2.36 2.36a4.94 4.94 0 0 0 5.24.85l.84-.43A6.1 6.1 0 0 0 47 84.02V49H11.98a8.08 8.08 0 0 1-6.66-4.13l-.43-.84a6.91 6.91 0 0 1 1.22-7.56l2.36-2.36A10.06 10.06 0 0 0 11 28 11 11 0 0 0 0 17v-2a13 13 0 0 1 13 13c0 2.47-1.37 5.79-3.11 7.53l-2.36 2.36a4.94 4.94 0 0 0-.85 5.24l.43.84A6.1 6.1 0 0 0 11.98 47H47V11.98a8.08 8.08 0 0 1 4.13-6.66l.84-.43a6.91 6.91 0 0 1 7.56 1.22l2.36 2.36A10.06 10.06 0 0 0 68 11 11 11 0 0 0 79 0h2a13 13 0 0 1-13 13 12 12 0 0 1-7.53-3.11l-2.36-2.36a4.93 4.93 0 0 0-5.24-.85l-.84.43A6.1 6.1 0 0 0 49 11.98V47h35.02a8.08 8.08 0 0 1 6.66 4.13l.43.84a6.91 6.91 0 0 1-1.22 7.56l-2.36 2.36A10.06 10.06 0 0 0 85 68a11 11 0 0 0 22 0c0-1.94-1.16-4.75-2.53-6.11l-2.36-2.36a6.93 6.93 0 0 1-1.22-7.56l.43-.84a8.08 8.08 0 0 1 6.66-4.13H143V11.98a6.1 6.1 0 0 0-3.03-4.87l-.84-.43c-1.59-.8-4-.4-5.24.85l-2.36 2.36A12 12 0 0 1 124 13a13 13 0 0 1-13-13h2a11 11 0 0 0 11 11c1.94 0 4.75-1.16 6.11-2.53l2.36-2.36a6.93 6.93 0 0 1 7.56-1.22l.84.43a8.08 8.08 0 0 1 4.13 6.66V47h35.02a6.1 6.1 0 0 0 4.87-3.03l.43-.84c.8-1.59.4-4-.85-5.24l-2.36-2.36A12 12 0 0 1 179 28a13 13 0 0 1 13-13zM84.02 143a6.1 6.1 0 0 0 4.87-3.03l.43-.84c.8-1.59.4-4-.85-5.24l-2.36-2.36A12 12 0 0 1 83 124a13 13 0 1 1 26 0c0 2.47-1.37 5.79-3.11 7.53l-2.36 2.36a4.94 4.94 0 0 0-.85 5.24l.43.84a6.1 6.1 0 0 0 4.87 3.03H143v-35.02a8.08 8.08 0 0 1 4.13-6.66l.84-.43a6.91 6.91 0 0 1 7.56 1.22l2.36 2.36A10.06 10.06 0 0 0 164 107a11 11 0 0 0 0-22c-1.94 0-4.75 1.16-6.11 2.53l-2.36 2.36a6.93 6.93 0 0 1-7.56 1.22l-.84-.43a8.08 8.08 0 0 1-4.13-6.66V49h-35.02a6.1 6.1 0 0 0-4.87 3.03l-.43.84c-.79 1.58-.4 4 .85 5.24l2.36 2.36a12.04 12.04 0 0 1 3.11 7.51A13 13 0 1 1 83 68a12 12 0 0 1 3.11-7.53l2.36-2.36a4.93 4.93 0 0 0 .85-5.24l-.43-.84A6.1 6.1 0 0 0 84.02 49H49v35.02a8.08 8.08 0 0 1-4.13 6.66l-.84.43a6.91 6.91 0 0 1-7.56-1.22l-2.36-2.36A10.06 10.06 0 0 0 28 85a11 11 0 0 0 0 22c1.94 0 4.75-1.16 6.11-2.53l2.36-2.36a6.93 6.93 0 0 1 7.56-1.22l.84.43a8.08 8.08 0 0 1 4.13 6.66V143h35.02z'%3E%3C/path%3E%3C/svg%3E");
+    }
+    
+    /* 2. O QUADRO BRANCO NO CENTRO */
+    /* Isso vai garantir que o texto e a tabela fiquem fáceis de ler */
+    [data-testid="stMainBlockContainer"] {
+        background-color: #ffffff;
+        padding: 3rem;
+        border-radius: 15px;
+        box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.05); /* Sombra suave para destacar */
+        margin-top: 2rem;
+        margin-bottom: 2rem;
     }
     
     /* Estilo do Título Oficial */
@@ -25,7 +28,7 @@ st.markdown("""
         font-weight: 700;
         margin-bottom: 0px;
         padding-bottom: 15px;
-        border-bottom: 2px solid #e2e8f0;
+        border-bottom: 2px solid #f1f5f9;
     }
     
     .subtitulo {
@@ -35,7 +38,8 @@ st.markdown("""
         margin-bottom: 30px;
     }
     
-    /* Arredondando e estilizando a caixa de pesquisa (inspirado no anexo) */
+    /* 3. BARRA DE PESQUISA ARREDONDADA E LIMITADA */
+    /* Mantendo a inspiração do seu anexo */
     div[data-baseweb="input"] {
         border-radius: 25px !important;
         border: 1px solid #cbd5e1 !important;
@@ -43,7 +47,7 @@ st.markdown("""
         padding: 2px 10px;
     }
     
-    /* Arredondando e escurecendo o botão de busca */
+    /* 4. BOTÃO DE BUSCA ESCURO E ARREDONDADO */
     div[data-testid="stButton"] > button {
         border-radius: 25px !important;
         background-color: #333333 !important;
@@ -54,60 +58,8 @@ st.markdown("""
         transition: 0.3s;
     }
     
-    /* Cor do botão quando passa o mouse */
     div[data-testid="stButton"] > button:hover {
         background-color: #000000 !important;
         color: white !important;
     }
     </style>
-""", unsafe_allow_html=True)
-
-# 2. Cabeçalho limpo
-st.markdown("<div class='titulo-oficial'>Consulta de CNAEs e Resoluções</div>", unsafe_allow_html=True)
-st.markdown("<div class='subtitulo'>Sistema integrado para verificação de atividades e dispensas</div>", unsafe_allow_html=True)
-
-@st.cache_data
-def carregar_dados():
-    df = pd.read_excel("cnaes_tributos.xlsx")
-    df['CNAE'] = df['CNAE'].astype(str)
-    df['Descrição'] = df['Descrição'].astype(str)
-    df['CNAE_limpo'] = df['CNAE'].str.replace(r'[\.\-\/]', '', regex=True)
-    return df
-
-try:
-    df = carregar_dados()
-except FileNotFoundError:
-    st.error("Arquivo 'cnaes_tributos.xlsx' não encontrado no repositório.")
-    st.stop()
-
-# 3. Layout da barra de pesquisa
-col1, col2 = st.columns([4, 1])
-
-with col1:
-    # label_visibility="collapsed" some com o texto acima da caixa, deixando igual ao seu print
-    termo_busca = st.text_input("Busca", placeholder="Digite o CNAE ou palavra-chave...", label_visibility="collapsed")
-
-with col2:
-    botao_buscar = st.button("Buscar", use_container_width=True)
-
-# 4. Lógica que roda ao apertar Enter ou clicar no botão
-if termo_busca or botao_buscar:
-    if termo_busca:
-        termo_limpo = re.sub(r'[\.\-\/]', '', termo_busca)
-        palavras = termo_busca.split()
-        
-        mascara_descricao = pd.Series(True, index=df.index)
-        for palavra in palavras:
-            mascara_descricao = mascara_descricao & df["Descrição"].str.contains(palavra, case=False, na=False, regex=False)
-            
-        mascara_cnae = df["CNAE_limpo"].str.contains(termo_limpo, case=False, na=False, regex=False)
-        filtro = df[mascara_descricao | mascara_cnae]
-        
-        st.write("") # Dá um respiro visual antes da tabela
-        
-        if filtro.empty:
-            st.warning(f"Nenhum registro encontrado para '{termo_busca}'.")
-        else:
-            st.markdown(f"<p style='color: #334155; font-weight: 600;'>{len(filtro)} resultado(s) encontrado(s):</p>", unsafe_allow_html=True)
-            filtro_para_mostrar = filtro.drop(columns=['CNAE_limpo'], errors='ignore')
-            st.dataframe(filtro_para_mostrar, use_container_width=True, hide_index=True)
