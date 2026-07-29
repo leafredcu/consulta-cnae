@@ -2,63 +2,65 @@ import streamlit as st
 import pandas as pd
 import re
 
-# Configuração visual da página
-st.set_page_config(page_title="Busca de CNAEs", layout="wide")
-st.title("🔍 Consulta de CNAEs e Resoluções")
-st.write("Digite o código CNAE (com ou sem pontuação) ou uma palavra da descrição.")
+# 1. Configuração visual (ícone na aba e layout centralizado ficam mais elegantes)
+st.set_page_config(page_title="Sistema CNAE", page_icon="🏢", layout="centered")
 
-# Função para carregar o seu arquivo externo de Excel
+# 2. Cabeçalho customizado (dá uma cara de sistema oficial e moderno)
+st.markdown("<h1 style='text-align: center; color: #1f4e79;'>🔍 Consulta de CNAEs e Resoluções</h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; font-size: 18px; color: #555;'>Sistema rápido para verificação de atividades e dispensas</p>", unsafe_allow_html=True)
+st.divider()
+
 @st.cache_data
 def carregar_dados():
-    # Aqui o programa vai ler o arquivo que você vai colocar lá no GitHub.
-    # O nome precisa estar exatamente igual ao do arquivo (cuidado com maiúsculas/minúsculas).
     df = pd.read_excel("cnaes_tributos.xlsx")
-    
-    # Garantir que as colunas sejam texto para não dar erro na busca
     df['CNAE'] = df['CNAE'].astype(str)
     df['Descrição'] = df['Descrição'].astype(str)
-    
-    # Cria uma coluna "invisível" limpando pontos, traços e barras do CNAE
-    # Isso permite que a pessoa busque "0111301" e o sistema encontre o "0111-3/01"
     df['CNAE_limpo'] = df['CNAE'].str.replace(r'[\.\-\/]', '', regex=True)
-    
     return df
 
-# Tenta carregar os dados. Se o arquivo não estiver lá, avisa de forma amigável.
 try:
     df = carregar_dados()
 except FileNotFoundError:
-    st.error("⚠️ O arquivo 'cnaes_tributos.xlsx' não foi encontrado. Lembre-se de subi-lo no GitHub junto com este código.")
+    st.error("⚠️ O arquivo 'cnaes_tributos.xlsx' não foi encontrado. Lembre-se de subi-lo no GitHub.")
     st.stop()
 
-# Campo de busca
-termo_busca = st.text_input("Pesquisar:")
+# 3. Criando colunas para alinhar o campo de busca e o botão lado a lado
+col1, col2 = st.columns([4, 1])
 
+with col1:
+    # O placeholder deixa uma dica clarinha dentro da caixa antes da pessoa digitar
+    termo_busca = st.text_input("O que você procura hoje?", placeholder="Ex: 0111-3/01 ou transporte...")
+
+with col2:
+    # Esses espaços vazios ajudam a empurrar o botão para baixo, alinhando com a caixa de texto
+    st.write("") 
+    st.write("")
+    # O type="primary" deixa o botão com cor de destaque
+    botao_buscar = st.button("Pesquisar 🔎", use_container_width=True, type="primary")
+
+# A busca acontece se a pessoa apertar Enter ou clicar no botão
 if termo_busca:
-    # Limpa a pontuação para a busca do CNAE
     termo_limpo = re.sub(r'[\.\-\/]', '', termo_busca)
-    
-    # Divide o texto da busca em palavras separadas
     palavras = termo_busca.split()
     
-    # Cria um filtro base para a descrição (todas as linhas começam como verdadeiras)
     mascara_descricao = pd.Series(True, index=df.index)
-    
-    # O programa verifica se CADA palavra digitada existe na descrição
-    # O regex=False evita que o app quebre se você digitar símbolos como traços ou parênteses
     for palavra in palavras:
         mascara_descricao = mascara_descricao & df["Descrição"].str.contains(palavra, case=False, na=False, regex=False)
         
-    # Filtro do CNAE (verifica se o número limpo digitado está na coluna de CNAE limpo)
     mascara_cnae = df["CNAE_limpo"].str.contains(termo_limpo, case=False, na=False, regex=False)
-    
-    # Junta os dois filtros: tem que bater a descrição inteligente OU o CNAE
     filtro = df[mascara_descricao | mascara_cnae]
     
+    st.divider() # Linha elegante para separar a área de busca dos resultados
+    
     if filtro.empty:
-        st.warning(f"Nenhum resultado encontrado para a busca '{termo_busca}'.")
+        st.warning(f"Poxa, nenhum resultado encontrado para '{termo_busca}'. Tente buscar de outra forma.")
     else:
-        st.subheader("Resultados:")
-        # Esconde a coluna invisível e mostra o resto
+        # Feedback visual de quantos resultados foram achados
+        st.success(f"Busca concluída! Encontramos {len(filtro)} resultado(s).")
+        
+        # Mostra a tabela de forma limpa
         filtro_para_mostrar = filtro.drop(columns=['CNAE_limpo'], errors='ignore')
         st.dataframe(filtro_para_mostrar, use_container_width=True, hide_index=True)
+else:
+    # Quando o app abre (sem busca), mostra uma mensagem amigável em vez de uma tela em branco
+    st.info("💡 Digite um código CNAE ou uma palavra-chave da descrição acima para começar a consulta.")
