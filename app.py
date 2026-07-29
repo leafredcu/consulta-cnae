@@ -35,19 +35,30 @@ except FileNotFoundError:
 termo_busca = st.text_input("Pesquisar:")
 
 if termo_busca:
-    # Limpa a pontuação do que o usuário digitou (caso seja um número de CNAE)
+    # Limpa a pontuação para a busca do CNAE
     termo_limpo = re.sub(r'[\.\-\/]', '', termo_busca)
     
-    # Filtra a planilha: busca na descrição normal OU no CNAE limpo
-    filtro = df[
-        df["Descrição"].str.contains(termo_busca, case=False, na=False) | 
-        df["CNAE_limpo"].str.contains(termo_limpo, case=False, na=False)
-    ]
+    # Divide o texto da busca em palavras separadas
+    palavras = termo_busca.split()
+    
+    # Cria um filtro base para a descrição (todas as linhas começam como verdadeiras)
+    mascara_descricao = pd.Series(True, index=df.index)
+    
+    # O programa verifica se CADA palavra digitada existe na descrição
+    # O regex=False evita que o app quebre se você digitar símbolos como traços ou parênteses
+    for palavra in palavras:
+        mascara_descricao = mascara_descricao & df["Descrição"].str.contains(palavra, case=False, na=False, regex=False)
+        
+    # Filtro do CNAE (verifica se o número limpo digitado está na coluna de CNAE limpo)
+    mascara_cnae = df["CNAE_limpo"].str.contains(termo_limpo, case=False, na=False, regex=False)
+    
+    # Junta os dois filtros: tem que bater a descrição inteligente OU o CNAE
+    filtro = df[mascara_descricao | mascara_cnae]
     
     if filtro.empty:
         st.warning(f"Nenhum resultado encontrado para a busca '{termo_busca}'.")
     else:
         st.subheader("Resultados:")
-        # Esconde a coluna invisível e mostra o resto exatamente como veio da planilha
+        # Esconde a coluna invisível e mostra o resto
         filtro_para_mostrar = filtro.drop(columns=['CNAE_limpo'], errors='ignore')
         st.dataframe(filtro_para_mostrar, use_container_width=True, hide_index=True)
