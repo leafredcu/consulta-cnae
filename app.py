@@ -47,14 +47,7 @@ if termo_busca:
     if filtro.empty:
         st.warning(f"Nenhum resultado encontrado para a busca '{termo_busca}'.")
     else:
-        # Define as colunas exatas que vão aparecer na tela pro usuário
-        colunas_para_mostrar = [
-            "CNAE", 
-            "Descrição", 
-            "Resolução: nº 04/2025", 
-            "Resolução: nº 05/2025"
-        ]
-        
         st.subheader("Resultados:")
-        # Mostra a tabela filtrada e esconde aquela coluna chata de índice (0, 1, 2...)
-        st.dataframe(filtro[colunas_para_mostrar], use_container_width=True, hide_index=True)
+        # Esconde a coluna invisível e mostra o resto exatamente como veio da planilha
+        filtro_para_mostrar = filtro.drop(columns=['CNAE_limpo'], errors='ignore')
+        st.dataframe(filtro_para_mostrar, use_container_width=True, hide_index=True)
